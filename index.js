@@ -84,15 +84,21 @@ async function run() {
     });
 
     app.get('/tutors', async (req, res)=>{
-        const result = await tutorsCollection.find().sort({ createAt: -1 }).limit(4).toArray();
+        const result = await tutorsCollection.find().sort({ createAt: -1 }).limit(3).toArray();
         res.send(result)
       })
-
 
     app.get('/available-tutors', async (req, res)=>{
         const result = await tutorsCollection.find().toArray();
         res.send(result)
       })
+
+    // User API
+      app.post("/users", async (req, res) => {
+        const data = req.body; 
+        const result = await usersCollection.insertOne(data);
+        res.send(result);
+    });
 
 
 
