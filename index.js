@@ -58,15 +58,30 @@ async function run() {
     const tutorsCollection = db.collection('tutors');
     const usersCollection = db.collection('users');
 
+    // User API
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      user.createdAt = new Date();
+      const email = user.email;
+      const userExists = await usersCollection.findOne({email})
+       if(userExists){
+        return res.send({message: 'user already exits'})
+       }
+
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
     // Student API
     app.post("/tuitions", async (req, res) => {
         const data = req.body; 
+        data.createdAt = new Date();
         const result = await tuitionCollection.insertOne(data);
         res.send(result);
     });
 
     app.get('/tuitions', async (req, res)=>{
-        const result = await tuitionCollection.find().sort({ createAt: -1 }).limit(4).toArray();
+        const result = await tuitionCollection.find().sort({ createdAt: -1 }).limit(4).toArray();
         res.send(result)
       })
 
