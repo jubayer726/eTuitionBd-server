@@ -54,6 +54,7 @@ async function run() {
     const tuitionCollection = db.collection("tuitions");
     const tutorsCollection = db.collection("tutors");
     const usersCollection = db.collection("users");
+     const ordersCollection = db.collection("orders");
 
     // User API
     app.post("/users", async (req, res) => {
@@ -127,7 +128,6 @@ async function run() {
       res.send(result);
     });
 
-
     // Tutor API
     app.post("/tutors", async (req, res) => {
       const data = req.body;
@@ -163,10 +163,9 @@ async function run() {
       res.send(result);
     });
 
-        //Payment APIs
+    //Payment APIs
     app.post("/create-checkout-session", async (req, res) => {
       const paymentInfo = req.body;
-      console.log(paymentInfo);
       const session = await stripe.checkout.sessions.create({
         line_items: [
           {
@@ -182,18 +181,52 @@ async function run() {
             quantity: paymentInfo?.quantity,
           },
         ],
-        customer_email: paymentInfo?.customer?.email,
+        customer_email: paymentInfo?.student?.email,
         mode: "payment",
         metadata: {
           tutorId: paymentInfo?.tutorId,
           student: paymentInfo?.student.email,
         },
-        success_url: `${process.env.CLIENT_DOMAIN_URL}/payment-success`,
+        success_url: `${process.env.CLIENT_DOMAIN_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.CLIENT_DOMAIN_URL}/payment-cancel${paymentInfo?.tutorId}`,
       });
       res.send({ url: session.url });
     });
 
+    app.post("/payment-success", async (req, res) => {
+      const { sessionId } = req.body;
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const tutor = await tutorsCollection.findOne({
+        _id: new ObjectId(session.metadata.tutorId),
+      });
+
+      const order = await ordersCollection.findOne({
+        transactionId: session.payment_intent,
+      });
+      if (session.status === "complete" && tutor && !order) {
+        //save order data in db
+        const orderInfo = {
+          tutorId: session.metadata.tutorId,
+          transactionId: session.payment_intent,
+          sudent: session.metadata.student,
+          status: "pending",
+          // seller: plant.seller,
+          // name: plant.name,
+          // category: plant.category,
+          quantity: 1,
+          price: session.amount_total / 100,
+          image: tutor.photo,
+        };
+        const result = await ordersCollection.insertOne(orderInfo);
+        // update plant quantity
+        // await tuitionCollection.updateOne(
+        //   {
+        //     _id: new ObjectId(session.metadata.tutorId),
+        //   },
+        //   { $inc: { quantity: -1 } }
+        // );
+      }
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
