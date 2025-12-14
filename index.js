@@ -55,6 +55,7 @@ async function run() {
     const tutorsCollection = db.collection("tutors");
     const usersCollection = db.collection("users");
     const ordersCollection = db.collection("orders");
+    const tutorApplicationCollection = db.collection("applications");
 
     // User API
     app.post("/users", async (req, res) => {
@@ -69,6 +70,13 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+
+    // User API
+    // app.post("/users", async (req, res) => {
+    //   const data = req.body;
+    //   const result = await usersCollection.insertOne(data);
+    //   res.send(result);
+    // });
 
     // Student API
     app.post("/tuitions", async (req, res) => {
@@ -98,15 +106,29 @@ async function run() {
     });
 
     app.get("/tuitions/approved", async (req, res) => {
-      const result = await tuitionCollection.find({ status: "approved" }).sort({ createdAt: -1 }).limit(4).toArray();
+      const result = await tuitionCollection
+        .find({ status: "approved" })
+        .sort({ createdAt: -1 })
+        .limit(4)
+        .toArray();
       res.send(result);
     });
 
-    app.get("/tuitions", async (req, res) => {
+    // app.get("/tuitions", async (req, res) => {
+    //   const result = await tuitionCollection
+    //     .find()
+    //     .sort({ createdAt: -1 })
+    //     .limit(4)
+    //     .toArray();
+    //   res.send(result);
+    // });
+
+    app.get("/student/tuitions/:email", async (req, res) => {
+      const email = req.params.email;
       const result = await tuitionCollection
-        .find()
-        .sort({ createdAt: -1 }).limit(4)
+        .find({ email, status: "approved" })
         .toArray();
+
       res.send(result);
     });
 
@@ -180,10 +202,29 @@ async function run() {
       res.send(result);
     });
 
-    // User API
-    app.post("/users", async (req, res) => {
-      const data = req.body;
-      const result = await usersCollection.insertOne(data);
+    // Applycation API
+    app.post("/applications", async (req, res) => {
+      const application = {
+        ...req.body,
+        status: "pending",
+        appliedAt: new Date(),
+      };
+      const result = await tutorApplicationCollection.insertOne(application);
+      res.send(result);
+    });
+
+    app.get("/applications", async (req, res) => {
+      const result = await tutorApplicationCollection
+        .find()
+        .toArray();
+
+      res.send(result);
+    });
+
+      app.delete("/applications/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await tutorApplicationCollection.deleteOne(filter);
       res.send(result);
     });
 
