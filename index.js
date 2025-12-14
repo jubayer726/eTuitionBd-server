@@ -54,7 +54,7 @@ async function run() {
     const tuitionCollection = db.collection("tuitions");
     const tutorsCollection = db.collection("tutors");
     const usersCollection = db.collection("users");
-     const ordersCollection = db.collection("orders");
+    const ordersCollection = db.collection("orders");
 
     // User API
     app.post("/users", async (req, res) => {
@@ -73,16 +73,39 @@ async function run() {
     // Student API
     app.post("/tuitions", async (req, res) => {
       const data = req.body;
+      data.status = "pending";
       data.createdAt = new Date();
       const result = await tuitionCollection.insertOne(data);
+      res.send(result);
+    });
+
+    app.put("/tuitions/approve/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: { status: "approved" },
+      };
+
+      const result = await tuitionCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.get("/tuitions/pending", async (req, res) => {
+      const result = await tuitionCollection
+        .find({ status: "pending" })
+        .toArray();
+      res.send(result);
+    });
+
+    app.get("/tuitions/approved", async (req, res) => {
+      const result = await tuitionCollection.find({ status: "approved" }).sort({ createdAt: -1 }).limit(4).toArray();
       res.send(result);
     });
 
     app.get("/tuitions", async (req, res) => {
       const result = await tuitionCollection
         .find()
-        .sort({ createdAt: -1 })
-        .limit(4)
+        .sort({ createdAt: -1 }).limit(4)
         .toArray();
       res.send(result);
     });
@@ -132,6 +155,7 @@ async function run() {
     app.post("/tutors", async (req, res) => {
       const data = req.body;
       data.createdAt = new Date();
+      data.status = "available";
       const result = await tutorsCollection.insertOne(data);
       res.send(result);
     });
@@ -208,7 +232,7 @@ async function run() {
         const orderInfo = {
           tutorId: session.metadata.tutorId,
           transactionId: session.payment_intent,
-          sudent: session.metadata.student,
+          student: session.metadata.student,
           status: "pending",
           // seller: plant.seller,
           // name: plant.name,
@@ -226,6 +250,13 @@ async function run() {
         //   { $inc: { quantity: -1 } }
         // );
       }
+    });
+
+    //get all orders for a customer by email
+    app.get("/my-orders/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await ordersCollection.find({ student: email }).toArray();
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
