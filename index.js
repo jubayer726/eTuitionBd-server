@@ -214,17 +214,33 @@ async function run() {
     });
 
     app.get("/applications", async (req, res) => {
-      const result = await tutorApplicationCollection
-        .find()
-        .toArray();
+      const result = await tutorApplicationCollection.find().toArray();
 
       res.send(result);
     });
 
-      app.delete("/applications/:id", async (req, res) => {
+    /// Reject tutor API
+    app.put("/applications/reject/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
-      const result = await tutorApplicationCollection.deleteOne(filter);
+      const updateDoc = {
+        $set: { status: "Rejected" },
+      };
+      const result = await tutorApplicationCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.put("/applications/paid/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: { status: "paid" },
+      };
+
+      const result = await tutorApplicationCollection.updateOne(
+        filter,
+        updateDoc
+      );
       res.send(result);
     });
 
@@ -261,7 +277,7 @@ async function run() {
     app.post("/payment-success", async (req, res) => {
       const { sessionId } = req.body;
       const session = await stripe.checkout.sessions.retrieve(sessionId);
-      const tutor = await tutorsCollection.findOne({
+      const tutor = await tutorApplicationCollection.findOne({
         _id: new ObjectId(session.metadata.tutorId),
       });
 
@@ -274,7 +290,9 @@ async function run() {
           tutorId: session.metadata.tutorId,
           transactionId: session.payment_intent,
           student: session.metadata.student,
-          status: "pending",
+          tutorName: session.metadata.tutorName,
+          date : new Date(),
+          status: "paid",
           // seller: plant.seller,
           // name: plant.name,
           // category: plant.category,
@@ -283,20 +301,17 @@ async function run() {
           image: tutor.photo,
         };
         const result = await ordersCollection.insertOne(orderInfo);
-        // update plant quantity
-        // await tuitionCollection.updateOne(
-        //   {
-        //     _id: new ObjectId(session.metadata.tutorId),
-        //   },
-        //   { $inc: { quantity: -1 } }
-        // );
       }
     });
 
     //get all orders for a customer by email
-    app.get("/my-orders/:email", async (req, res) => {
+    app.get("/orders/student/:email", async (req, res) => {
       const email = req.params.email;
-      const result = await ordersCollection.find({ student: email }).toArray();
+      const result = await ordersCollection
+        .find({ student: email })
+        .sort({ paidAt: -1 })
+        .toArray();
+
       res.send(result);
     });
 
