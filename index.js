@@ -71,12 +71,29 @@ async function run() {
       res.send(result);
     });
 
-    // User API
-    // app.post("/users", async (req, res) => {
-    //   const data = req.body;
-    //   const result = await usersCollection.insertOne(data);
-    //   res.send(result);
-    // });
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await usersCollection.findOne({ email });
+      res.send(result);
+    });
+
+    // Update Profile
+    app.put("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const updateDoc = {
+        $set: {
+          displayName: req.body.displayName,
+          photoURL: req.body.photoURL,
+          phone: req.body.phone,
+          address: req.body.address,
+          updatedAt: new Date(),
+        },
+      };
+      const result = await usersCollection.updateOne({ email }, updateDoc, {
+        upsert: true,
+      });
+      res.send(result);
+    });
 
     // Student API
     app.post("/tuitions", async (req, res) => {
@@ -143,6 +160,16 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/tuitions/student/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await tuitionCollection
+        .find({ email })
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      res.send(result);
+    });
+
     app.put("/tuitions/:id", async (req, res) => {
       const id = req.params.id;
       const updatedData = req.body;
@@ -150,20 +177,45 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          name: updatedData.name,
-          studentClass: updatedData.studentClass,
-          location: updatedData.location,
-          subjects: updatedData.subjects,
-          salary: updatedData.salary,
-          daysPerWeek: updatedData.daysPerWeek,
-          description: updatedData.description,
-          image: updatedData.image,
+    name: updatedData.name,
+    studentClass: updatedData.studentClass,
+    location: updatedData.location,
+    subjects: updatedData.subjects,
+    salary: updatedData.salary,
+    daysPerWeek: updatedData.daysPerWeek,
+    description: updatedData.description,
+    // image: updatedData.image,
+    status: "pending",
         },
       };
 
       const result = await tuitionCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+
+    // app.put("/tuitions/:id", async (req, res) => {
+    //   const id = req.params.id;
+
+    //   const updateDoc = {
+    //     $set: {
+    //       name: updatedData.name,
+    //       studentClass: updatedData.studentClass,
+    //       location: updatedData.location,
+    //       subjects: updatedData.subjects,
+    //       salary: updatedData.salary,
+    //       daysPerWeek: updatedData.daysPerWeek,
+    //       description: updatedData.description,
+    //       status: "pending",
+    //     },
+    //   };
+
+    //   const result = await tuitionCollection.updateOne(
+    //     { _id: new ObjectId(id) },
+    //     updateDoc
+    //   );
+
+    //   res.send(result);
+    // });
 
     app.delete("/tuitions/:id", async (req, res) => {
       const id = req.params.id;
@@ -226,7 +278,10 @@ async function run() {
       const updateDoc = {
         $set: { status: "Rejected" },
       };
-      const result = await tutorApplicationCollection.updateOne(filter, updateDoc);
+      const result = await tutorApplicationCollection.updateOne(
+        filter,
+        updateDoc
+      );
       res.send(result);
     });
 
@@ -291,7 +346,7 @@ async function run() {
           transactionId: session.payment_intent,
           student: session.metadata.student,
           tutorName: session.metadata.tutorName,
-          date : new Date(),
+          date: new Date(),
           status: "paid",
           // seller: plant.seller,
           // name: plant.name,
