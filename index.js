@@ -71,11 +71,29 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       const result = await usersCollection.findOne({ email });
       res.send(result);
     });
+
+    app.patch("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+
+      const result = await usersCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedData }
+      );
+
+      res.send(result);
+    });
+
 
     // Update Profile
     app.put("/users/:email", async (req, res) => {
@@ -89,11 +107,18 @@ async function run() {
           updatedAt: new Date(),
         },
       };
-      const result = await usersCollection.updateOne({ email }, updateDoc, {
-        upsert: true,
-      });
+      const result = await usersCollection.updateOne({ email }, updateDoc, {upsert: true});
       res.send(result);
     });
+
+  app.delete("/users/:id", async (req, res) => {
+    const id = req.params.id;
+    const result = await usersCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    res.send(result);
+  });
 
     // Student API
     app.post("/tuitions", async (req, res) => {
@@ -378,6 +403,20 @@ app.get("/my-applications", async (req, res) => {
 
       res.send(result);
     });
+
+    app.get("/orders", async (req, res) => {
+      const result = await ordersCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/payments/total-earnings", async (req, res) => {
+    const payments = await ordersCollection
+      .find({ status: "paid" }).toArray();
+    const total = payments.reduce(
+      (sum, payment) => sum + payment.price, 0 );
+      res.send({ total });
+    });
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
