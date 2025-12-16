@@ -193,29 +193,6 @@ async function run() {
       res.send(result);
     });
 
-    // app.put("/tuitions/:id", async (req, res) => {
-    //   const id = req.params.id;
-
-    //   const updateDoc = {
-    //     $set: {
-    //       name: updatedData.name,
-    //       studentClass: updatedData.studentClass,
-    //       location: updatedData.location,
-    //       subjects: updatedData.subjects,
-    //       salary: updatedData.salary,
-    //       daysPerWeek: updatedData.daysPerWeek,
-    //       description: updatedData.description,
-    //       status: "pending",
-    //     },
-    //   };
-
-    //   const result = await tuitionCollection.updateOne(
-    //     { _id: new ObjectId(id) },
-    //     updateDoc
-    //   );
-
-    //   res.send(result);
-    // });
 
     app.delete("/tuitions/:id", async (req, res) => {
       const id = req.params.id;
@@ -254,6 +231,16 @@ async function run() {
       res.send(result);
     });
 
+     app.get("/my-post/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await tutorsCollection
+        .find({ email })
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      res.send(result);
+    });
+
     // Applycation API
     app.post("/applications", async (req, res) => {
       const application = {
@@ -270,6 +257,25 @@ async function run() {
 
       res.send(result);
     });
+  //   app.get("/applications/student/:email", async (req, res) => {
+  //   const email = req.params.email;
+
+  //   const result = await tutorApplicationCollection
+  //     .find({ studentEmail: email })
+  //     .toArray();
+
+  //   res.send(result);
+  // });
+
+  // GET applications by tutor email
+app.get("/my-applications", async (req, res) => {
+  const tutorEmail = req.query.email;
+  const query = tutorEmail ? { tutorEmail } : {};
+  const result = await tutorApplicationCollection.find(query).toArray();
+  res.send(result);
+});
+
+
 
     /// Reject tutor API
     app.put("/applications/reject/:id", async (req, res) => {
@@ -298,6 +304,7 @@ async function run() {
       );
       res.send(result);
     });
+    
 
     //Payment APIs
     app.post("/create-checkout-session", async (req, res) => {
@@ -348,6 +355,7 @@ async function run() {
           tutorName: session.metadata.tutorName,
           date: new Date(),
           status: "paid",
+          // status: "accepted",
           // seller: plant.seller,
           // name: plant.name,
           // category: plant.category,
@@ -356,6 +364,7 @@ async function run() {
           image: tutor.photo,
         };
         const result = await ordersCollection.insertOne(orderInfo);
+        res.send(result)
       }
     });
 
