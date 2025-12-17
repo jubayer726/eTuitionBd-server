@@ -76,6 +76,13 @@ async function run() {
       res.send(result);
     });
 
+    // Get a users role
+    app.get("/users/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await usersCollection.findOne({ email });
+      res.send({role: user?.role});
+    });
+
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       const result = await usersCollection.findOne({ email });
@@ -94,6 +101,7 @@ async function run() {
       res.send(result);
     });
 
+    
 
     // Update Profile
     app.put("/users/:email", async (req, res) => {
@@ -119,6 +127,7 @@ async function run() {
 
     res.send(result);
   });
+
 
     // Student API
     app.post("/tuitions", async (req, res) => {
