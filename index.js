@@ -27,12 +27,11 @@ app.use(express.json());
 // jwt middlewares
 const verifyJWT = async (req, res, next) => {
   const token = req?.headers?.authorization?.split(" ")[1];
-  console.log(token);
   if (!token) return res.status(401).send({ message: "Unauthorized Access!" });
   try {
     const decoded = await admin.auth().verifyIdToken(token);
     req.tokenEmail = decoded.email;
-    console.log(decoded);
+    // console.log(decoded);
     next();
   } catch (err) {
     console.log(err);
@@ -56,6 +55,39 @@ async function run() {
     const usersCollection = db.collection("users");
     const ordersCollection = db.collection("orders");
     const tutorApplicationCollection = db.collection("applications");
+
+     // role middlewares
+    const verifyADMIN = async (req, res, next) => {
+      const email = req.tokenEmail
+      const user = await usersCollection.findOne({ email })
+      if (user?.role !== 'admin')
+        return res
+          .status(403)
+          .send({ message: 'Admin only Actions!', role: user?.role })
+
+      next()
+    }
+    const verifyStudent = async (req, res, next) => {
+      const email = req.tokenEmail
+      const user = await usersCollection.findOne({ email })
+      if (user?.role !== 'student')
+        return res
+          .status(403)
+          .send({ message: 'Seller only Actions!', role: user?.role })
+
+      next()
+    }
+
+    const verifyTutor = async (req, res, next) => {
+      const email = req.tokenEmail
+      const user = await usersCollection.findOne({ email })
+      if (user?.role !== 'tutor')
+        return res
+          .status(403)
+          .send({ message: 'Seller only Actions!', role: user?.role })
+
+      next()
+    }
 
     // User API
     app.post("/users", async (req, res) => {
@@ -291,8 +323,6 @@ app.get("/my-applications", async (req, res) => {
   const result = await tutorApplicationCollection.find(query).toArray();
   res.send(result);
 });
-
-
 
     /// Reject tutor API
     app.put("/applications/reject/:id", async (req, res) => {
