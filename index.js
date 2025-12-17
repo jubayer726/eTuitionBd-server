@@ -77,10 +77,10 @@ async function run() {
     });
 
     // Get a users role
-    app.get("/users/role/:email", async (req, res) => {
+    app.get("/users/role", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      const user = await usersCollection.findOne({ email });
-      res.send({role: user?.role});
+      const user = await usersCollection.findOne({ email: req.tokenEmail });
+      res.send({ role: user.role })
     });
 
     app.get("/users/:email", async (req, res) => {
@@ -165,15 +165,6 @@ async function run() {
       res.send(result);
     });
 
-    // app.get("/tuitions", async (req, res) => {
-    //   const result = await tuitionCollection
-    //     .find()
-    //     .sort({ createdAt: -1 })
-    //     .limit(4)
-    //     .toArray();
-    //   res.send(result);
-    // });
-
     app.get("/student/tuitions/:email", async (req, res) => {
       const email = req.params.email;
       const result = await tuitionCollection
@@ -211,15 +202,15 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-    name: updatedData.name,
-    studentClass: updatedData.studentClass,
-    location: updatedData.location,
-    subjects: updatedData.subjects,
-    salary: updatedData.salary,
-    daysPerWeek: updatedData.daysPerWeek,
-    description: updatedData.description,
-    // image: updatedData.image,
-    status: "pending",
+          name: updatedData.name,
+          studentClass: updatedData.studentClass,
+          location: updatedData.location,
+          subjects: updatedData.subjects,
+          salary: updatedData.salary,
+          daysPerWeek: updatedData.daysPerWeek,
+          description: updatedData.description,
+          // image: updatedData.image,
+          status: "pending",
         },
       };
 
@@ -291,15 +282,7 @@ async function run() {
 
       res.send(result);
     });
-  //   app.get("/applications/student/:email", async (req, res) => {
-  //   const email = req.params.email;
 
-  //   const result = await tutorApplicationCollection
-  //     .find({ studentEmail: email })
-  //     .toArray();
-
-  //   res.send(result);
-  // });
 
   // GET applications by tutor email
 app.get("/my-applications", async (req, res) => {
@@ -402,16 +385,17 @@ app.get("/my-applications", async (req, res) => {
       }
     });
 
-    //get all orders for a customer by email
-    app.get("/orders/student/:email", async (req, res) => {
+    //get all orders for a student by email
+    app.get("/orders/student", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const result = await ordersCollection
-        .find({ student: email })
+        .find({ student: req.tokenEmail })
         .sort({ paidAt: -1 })
         .toArray();
 
       res.send(result);
     });
+
 
     app.get("/orders", async (req, res) => {
       const result = await ordersCollection.find().toArray();
