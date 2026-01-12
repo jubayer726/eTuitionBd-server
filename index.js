@@ -17,9 +17,15 @@ const app = express();
 // middleware
 app.use(
   cors({
-    origin: [process.env.CLIENT_DOMAIN_URL],
+    origin: [
+      process.env.CLIENT_DOMAIN_URL,
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "https://e-tution-bd.netlify.app"
+    ],
     credentials: true,
     optionSuccessStatus: 200,
+    
   })
 );
 app.use(express.json());
@@ -272,7 +278,7 @@ async function run() {
       const result = await tutorsCollection
         .find()
         .sort({ createAt: -1 })
-        .limit(3)
+        .limit(4)
         .toArray();
       res.send(result);
     });
